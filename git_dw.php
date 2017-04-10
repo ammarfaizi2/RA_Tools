@@ -1,53 +1,81 @@
 <?php
+header("Content-type:application/json");
 date_default_timezone_set("Asia/Jakarta");
-header("content-type:application/json");
-class git_dw
+define("dr",__DIR__.'/.gitdw/',true);
+define("zip",dr.'pclzip.lib.php');
+class gitdw
 {
-	const dgit = ".git_dw/";
-	private $master;
 	public function __construct($url)
 	{
-		if(!isset($_COOKIE['auth'],$_COOKIE['key'])){
-			exit($this->err("Auth failed"));
-		}
-		is_dir(self::dgit) or mkdir(self::dgit);
-		is_dir(self::dgit.'files') or mkdir(self::dgit.'files');
-		if(!file_exists(self::dgit.'data.json')){
-			file_put_contents(self::dgit.'data.json',json_encode(array("author"=>$_COOKIE['auth'],"first_make"=>(date("Y-m-d H:i:s")),"commit"=>0,"last_commit"=>null)));
-			
-		}
-		if(!file_exists(self::dgit.'/pclzip.lib.php')){
-		$a =	$this->download("https://raw.githubusercontent.com/ammarfaizi2/RA_Tools/master/pclzip.lib.php");
-		if($a[0]){
-			exit($this->err("Error download lib : ".$a[0]." ".$a[1]));
-		}
-		file_put_contents(self::dgit.'/pclzib.lib.php',$a[1]);
-		}
-		$this->master = rtrim(trim($url),"/")."/archive/master.zip";
-		$this->data = json_decode(file_get_contents(self::dgit.'data.json'),true);
+		$this->init();
+		$this->data = json_decode(file_get_contents(dr.'data.json'),true);
+		$this->master = rtrim(trim($url),'/').'/archive/master.zip';
 	}
 	public function run()
 	{
-$a=$this->download($this->master);
-if($a[0]){
-	exit($this->err("Error download file : ".$a[0]." ".$a[1]));
+		$a = $this->curl($this->master);
+		if(is_array($a)){
+			exit($this->err("Error download repo : ".$a[0]." ".$a[1])."\n");
+		}
+$hash = md5($a);
+if($hash==$this->data['last_commit']['hash']){
+	exit($this->msg(
+	"Everything up-to-date"
+	)."\n");
 }
-$hash = md5($a[1]);
-if($hash==$this->data['last_commit']){
-	exit($this->msg("Everything up-to-date"));
-}
-file_put_contents(self::dgit.'files/aa_'.(++$this->data['commit']).'.zip',$a[1]);
-$this->data['author'] = $_COOKIE['auth'];
-$this->data['last_commit_at'] = date("Y-m-d H:i:s");
-$this->data['last_commit'] = $hash;
-file_put_contents(self::dgit.'data.json',json_encode($this->data));
-require realpath(self::dgit).'/pclzib.lib.php';
-$e = new PclZip(self::dgit.'files/aa_'.($this->data['commit']).'.zip');
-$zx = $e->extract(PCLZIP_OPT_PATH,self::dgit.'..',PCLZIP_OPT_REMOVE_PATH,self::dgit.'..');
-$zx==0 and exit(
-$this->err("Error on extract : ".$e->errorInfo(true))
+file_put_contents(dr.'files/master_'.(++$this->data['commits']).'.zip',$a);
+require zip;
+$e = new PclZip(realpath(dr.'files/master_'.$this->data['commits'].'.zip'));
+$fq = $e->listContent();
+$fq = $fq[0]['filename'];
+$z = $e->extract(PCLZIP_OPT_PATH,realpath(dr.'..'),PCLZIP_OPT_REMOVE_PATH,$fq);
+if($z==0){
+	exit($this->err("Error decompress file : ".$e->errorInfo(true)));
+} 
+$this->data['last_commit'] = array(
+'auth'=>$_COOKIE['auth'],
+'date'=>(date("Y-m-d H:i:s")),
+'hash'=>$hash
 );
+file_put_contents(dr.'/data.json',json_encode($this->data));
 exit($this->msg($this->data));
+	}
+	private static function rrmdir($dir)
+	{
+$files=array_diff(scandir($dir), array('.','..'));
+foreach ($files as $file) { 
+(is_dir("$dir/$file"))?self::rrmdir("$dir/$file") : unlink("$dir/$file"); 
+}return rmdir($dir); 
+}
+	private function init()
+	{
+		is_dir(dr) or mkdir(dr);
+		is_dir(dr.'files') or mkdir(dr.'files');
+		if(!file_exists(zip)){
+			$a = $this->curl("https://raw.githubusercontent.com/ammarfaizi2/RA_Tools/master/pclzip.lib.php");
+			if(is_array($a)){
+				exit($this->err(
+"Error download lib : ".$a[0]." ".$a[1]
+				)."\n");
+			}
+			file_put_contents(zip,$a);
+		}
+		if(!isset($_COOKIE['auth'],$_COOKIE['key'])){
+			exit($this->err("Error Auth"));
+		}
+		if(!file_exists(dr.'data.json')){	
+		file_put_contents(dr.'data.json',json_encode(array(
+			'author'=>$_COOKIE['auth'],
+			'date_init'=>(date("Y-m-d H:i:s")),
+			'commits'=>0,
+			'last_commit'=>array(
+				'hash'=>null,
+				'date'=>null,
+				'auth'=>null
+				),
+			'dir'=>(realpath(__DIR__))
+			)));
+		}
 	}
 	private function err($msg)
 	{
@@ -57,38 +85,33 @@ exit($this->msg($this->data));
 	{
 		return json_encode(array("msg"=>$msg));
 	}
-	private function download($url)
+	private function curl($url,$opt=null)
 	{
 		$ch = curl_init($url);
 		$op = array(
-		CURLOPT_RETURNTRANSFER=>true,
-		CURLOPT_SSL_VERIFYPEER=>false,
-		CURLOPT_SSL_VERIFYHOST=>false,
-		CURLOPT_TIMEOUT=>500,
-		CURLOPT_CONNECTTIMEOUT=>500,
-		CURLOPT_COOKIE=>self::dgit.'.git_cookie',
-		CURLOPT_COOKIEJAR=>self::dgit.'.git_cookie',
-		CURLOPT_FOLLOWLOCATION=>false
+CURLOPT_RETURNTRANSFER=>true,
+CURLOPT_SSL_VERIFYPEER=>false,
+CURLOPT_SSL_VERIFYHOST=>false,
+CURLOPT_COOKIEJAR=>dr.'/.cookies',
+CURLOPT_COOKIEFILE=>dr.'/.cookies',
+CURLOPT_FOLLOWLOCATION=>false,		
 		);
+		if(is_array($opt)){
+			$op = array_merge($op,$opt);
+		}
 		curl_setopt_array($ch,$op);
 		$out = curl_exec($ch);
-		$err = curl_error($ch) and $out = $err;
-		$ern = curl_errno($ch);
+		$err = curl_error($ch) and $out = array(curl_errno($ch),$err);
 		$info = curl_getinfo($ch);
 		if(isset($info['redirect_url']) and !empty($info['redirect_url'])){
-			curl_close($ch);
-			$ch = curl_init($info['redirect_url']);
-			curl_setopt_array($ch,$op);
-			$out = curl_exec($ch);
-		$err = curl_error($ch) and $out = $err;
-		$ern = curl_errno($ch);
+			$out = $this->curl($info['redirect_url']);
 		}
 		curl_close($ch);
-		return array($ern,$out);
+		return $out;
 	}
 }
-if(!isset($_POST['url'])){
-	die("no post");
-}
-$app = new git_dw(trim($_POST['url']));
+isset($_POST['url']) or exit(
+json_encode(array("error_msg"=>"Error !"))
+);
+$app = new gitdw($_POST['url']);
 $app->run();
