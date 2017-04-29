@@ -79,11 +79,11 @@ foreach ($files as $file) {
 	}
 	private function err($msg)
 	{
-		return json_encode(array("error_msg"=>$msg));
+		return json_encode(array("error_msg"=>$msg)).PHP_EOL;
 	}
 	private function msg($msg)
 	{
-		return json_encode(array("msg"=>$msg));
+		return json_encode(array("msg"=>$msg)).PHP_EOL;
 	}
 	private function curl($url,$opt=null)
 	{
