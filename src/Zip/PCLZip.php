@@ -1,4 +1,5 @@
 <?php
+namespace Zip;
 // --------------------------------------------------------------------------------
 // PhpConcept Library - Zip Module 2.8.2
 // --------------------------------------------------------------------------------
@@ -187,7 +188,7 @@
   //   extract() : Extract the content of the archive
   //   properties() : List the properties of the archive
   // --------------------------------------------------------------------------------
-  class PclZip
+  class PCLZip
   {
       // ----- Filename of the zip file
     public $zipname = '';
