@@ -15,7 +15,7 @@
     },
     "autoload":{
         "psr-0":{
-            "Curl/CMCurl": "src/Curl"
+            "Curl": "src/"
         }
     }
 }
