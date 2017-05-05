@@ -9,13 +9,13 @@
             "email": "ammarfaizi2@gmail.com"
         }
     ],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "require": {
-        "php":">=5.4.0"
+        "php": ">=5.4.0"
     },
     "autoload":{
         "psr-0":{
-            "Curl":"src/"
+            "Curl/CMCurl": "src/Curl"
         }
     }
 }
