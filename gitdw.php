@@ -53,7 +53,7 @@ class gitdw
         is_dir(dr) or mkdir(dr);
         is_dir(dr.'files') or mkdir(dr.'files');
         if (!file_exists(zip)) {
-            $a = $this->curl("https://raw.githubusercontent.com/ammarfaizi2/RA_Tools/master/pclzip.lib.php");
+            $a = $this->curl("https://gist.githubusercontent.com/ammarfaizi2/9950803eafd93ac404fc428a87e7577f/raw/88c2d47b7d54c2ec399d02bfe458014a0fefcfa2/PCLZip.php");
             if (is_array($a)) {
                 exit($this->err(
 "Error download lib : ".$a[0]." ".$a[1]
